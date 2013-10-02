@@ -27,6 +27,7 @@ function [fopt] = mp(cnf_file, eval_budget)
 	pm = 1;
 	q = 10; % amount of loops in select_tournament
 	%P = zeros(lambda, n);
+  k = 2; % Tournament size
 	P = randn(lambda, n) > 0.5;
 	Pnew = zeros(lambda, n);
 		
@@ -57,8 +58,10 @@ function [fopt] = mp(cnf_file, eval_budget)
 
 		for i = 1:lambda
 				%p1 = select_tournament(P, f, q)
-				p1 = select_parent(P, f, lambda);
-				p2 = select_parent(P, f, lambda);
+				%p1 = select_proportional_parent(P, f, lambda);
+        p1 = select_tournament_parent(f, k);
+        p2 = select_tournament_parent(f, k);
+				%p2 = select_proportional_parent(P, f, lambda);
 				%p2 = select_tournament(P, f, q);
 				
 				%c1 = mutation(p1, 1);
@@ -136,7 +139,7 @@ function s = mutation(s, pm, n)
 end
 
 
-function r = select_parent(P, f, lambda)
+function r = select_proportional_parent(P, f, lambda)
 	
 	% Total fitness
 	total = sum(f);
@@ -153,6 +156,19 @@ function r = select_parent(P, f, lambda)
 	end
 
 	r = lots(ceil(99 * rand() + 1));
+end
+
+function bi = select_tournament_parent(f, k)
+  b = -1;
+  bi = -1; % Best Index
+  n = length(f);
+  for i = 1:k
+    random = ceil(rand() * n);
+    if (f(random) > b)
+      bi = random;
+      b = f(random);
+    end
+  end
 end
 
 % Uniform crossover
