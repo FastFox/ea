@@ -8,7 +8,7 @@ function [fopt] = mc(cnf_file, eval_budget)
 % Last modified: September 7, 2011
 
 	% Do you want online plotting? If not, set to false
-	doplot = true;
+	doplot = false;
 
 	% Load CNF file and create fitness function handle
 	cnf_expr = cnf_read(cnf_file);
