@@ -5,11 +5,10 @@ function [fopt] = mp(cnf_file, eval_budget)
 % Dennis Michiel MAX-3SAT solver
 %
 % Author: Johannes W. Kruisselbrink, Edgar Reehuis, Dennis Mohorko, Michiel Vos
-% Last modified: October, 25 2013
+% Last modified: October 25, 2013
 
 	% Do you want online plotting? If not, set to false
-	doplot = true;
-	plotbest = false;
+	doplot = false;
 
 	% Load CNF file and create fitness function handle
 	cnf_expr = cnf_read(cnf_file);
@@ -17,11 +16,14 @@ function [fopt] = mp(cnf_file, eval_budget)
 	n = size(cnf_expr, 1);
 	evals_used = 0;
 
+	% Use non-repeatable random numbers
+	rng('shuffle')
+
 	% Initialize algorithm
-	lambda = 50; % Population size
+	lambda = 100; % Population size
 	pc = 0.8; % Chance at crossover
 	pm = 1 / lambda; % Chance at mutation
-  k = 4; % Tournament size
+  k = 8; % Tournament size
 	P = randn(lambda, n) > 0.5; % Random bits for the population
 	Pnew = zeros(lambda, n); % Next generation
 	histf = zeros(1, eval_budget);
@@ -29,7 +31,7 @@ function [fopt] = mp(cnf_file, eval_budget)
 	% Initialize population
 	for i = 1:lambda
 		f(i) = fitnessfct(P(i, :)'); % Calculate fitness
-		if(i == 1 | f(i) > fopt | plotbest == false) % 1 == 1, so it will plot every result instead of the best
+		if(i == 1 | f(i) > fopt)
 			aopt = P(i, :); % Optimal solution so far
 			fopt = f(i); % Optimal fitness so far
 		end
@@ -45,38 +47,37 @@ function [fopt] = mp(cnf_file, eval_budget)
 		end
 		evals_used = evals_used + 1;
 	end
+	%size(P)
 
 	% Initilization is the first generation
-	for g = 2:ceil(eval_budget / lambda) - 1
+	for g = 2:ceil(eval_budget / lambda)
 		% For every new individu
 		for i = 1:lambda
-				%p1 = select_tournament(P, f, q)
+				% Proportional selection
 				%p1 = select_proportional_parent(P, f, lambda);
+				%p2 = select_proportional_parent(P, f, lambda);
+
 				% Select parents with tournament selection
         p1 = select_tournament_parent(f, k);
         p2 = select_tournament_parent(f, k);
-				%p2 = select_proportional_parent(P, f, lambda);
-				%p2 = select_tournament(P, f, q);
 				
-				%c1 = mutation(p1, 1);
-
 				% Maybe crossover
 				if rand() > pc
-					c1 = crossover(P(p1, :), P(p2, :));
+					child = crossover(P(p1, :), P(p2, :));
 				else
 					% If not, select random parent
 					if rand() > 0.5
-						c1 = p1;
+						child = P(p1, :);
 					else
-						c1 = p2;
+						child = P(p2, :);
 					end
 				end
 
 				% Mutation
-				c11 = mutation(c1, pm, n);
+				child = mutation(child, pm, n);
 
 				% Add offspring to the next generation
-				Pnew(i, :) = c11;
+				Pnew(i, :) = child;
 		end
 
 		% Overwrite population with the new generation
@@ -86,7 +87,7 @@ function [fopt] = mp(cnf_file, eval_budget)
 		for i = 1:lambda
 			% Store best solution
 			f(i) = fitnessfct(P(i, :)');
-			if(f(i) > fopt | plotbest == false)
+			if(f(i) > fopt)
 				aopt = P(i, :);
 				fopt = f(i);
 			end
@@ -101,33 +102,18 @@ function [fopt] = mp(cnf_file, eval_budget)
 				xlim([1 n])
 				drawnow();
 			end
-			
 			evals_used = evals_used + 1;
-
 		end
-
 	end
-	
 end
 
 % Loop through the whole bitstring and mutate a bit with a certain probability.
 function s = mutation(s, pm, n)
 	for i = 1:length(s)
 		if rand() < pm
-			%s(i) = %!s(i);
-			%if s(i) == 0
-			%	s(i) = 1;
-			%else
-			%	s(i) = 0;
-			%end
 			s(i) = ~s(i);
 		end
 	end
-	%for i=1:pm
-	%	a = ceil(rand() * n);
-	%	b = ceil(rand() * n);
-	%	s([a b]) = s([b a]);
-	%end
 end
 
 
